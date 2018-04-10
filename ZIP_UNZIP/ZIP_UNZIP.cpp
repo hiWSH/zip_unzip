@@ -250,6 +250,7 @@ const char* unzip(const char* jason)
 	WCHAR sSrcfile[LEN_1024] = {};
 	WCHAR sDestpath[LEN_1024] = {};
 	char sPassword[LEN_1024] = {};
+	char sOverwrite[LEN_1024] = {};
 	if (!root)
 	{
 		return ret;
@@ -262,7 +263,21 @@ const char* unzip(const char* jason)
 	MultiByteToWideChar(CP_ACP,0,item->valuestring,strlen(item->valuestring)+1,sDestpath,sizeof(sDestpath)/sizeof(sDestpath[0]));
 	item = cJSON_GetObjectItem(root, "password");
 	sprintf_s(sPassword, "%s", item->valuestring); 
+	item = cJSON_GetObjectItem(root, "overwrite");
+	sprintf_s(sOverwrite, "%s", item->valuestring); 
 	char* pPassword = 0 == strlen(sPassword) || 0 == strcmp(sPassword,"")?NULL:sPassword;
+	//如果不覆盖需要判断文件夹是否已存在，存在则返回ERROR
+	if (strcmp(sOverwrite,"0") == 0)
+	{
+		WIN32_FIND_DATA FindFileData;
+		HANDLE hFind;
+		hFind = FindFirstFile(sDestpath, &FindFileData);
+		if (hFind != INVALID_HANDLE_VALUE) 
+		{
+			CloseHandle(hFind);
+			return ret;
+		}
+	}
 	HZIP hz;
 	hz = OpenZip(sSrcfile,pPassword);
 	SetUnzipBaseDir(hz,sDestpath);
@@ -297,7 +312,7 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 		{
 			// TODO: 在此处为应用程序的行为编写代码。
 			zip("{\"srcpath\":\"D:\\\\job\\\\greatwall\\\\test\\\\gwi\",\"destfile\":\"D:\\\\job\\\\greatwall\\\\test1\\\\gwi4.zip\",\"password\":\"123456\"}");
-			unzip("{\"srcfile\":\"D:\\\\job\\\\greatwall\\\\test1\\\\gwi4.zip\",\"destpath\":\"D:\\\\job\\\\greatwall\\\\test2\",\"password\":\"123456\"}");
+			unzip("{\"srcfile\":\"D:\\\\job\\\\greatwall\\\\test1\\\\gwi4.zip\",\"destpath\":\"D:\\\\job\\\\greatwall\\\\test2\",\"password\":\"123456\",\"overwrite\":\"\"}");
 		}
 	}
 	else
